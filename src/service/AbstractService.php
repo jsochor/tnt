@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Abstract Service
+ * Abstract Service.
  *
  * @author Wojciech Brozyna <http://vobro.systems>
  * @license https://github.com/200MPH/tnt/blob/master/LICENCE MIT
@@ -13,270 +13,242 @@ use XMLWriter;
 use thm\tnt_ec\MyXMLWriter;
 use thm\tnt_ec\TNTException;
 
-abstract class AbstractService {
-    
+abstract class AbstractService
+{
     /**
-     * XML Request
-     * 
+     * XML Request.
+     *
      * @var XMLWriter
      */
     protected $xml;
-    
+
     /**
-     * Account number
-     * 
+     * Account number.
+     *
      * @var int
      */
     protected $account = 0;
-    
+
     /**
-     * Account country code
-     * 
+     * Account country code.
+     *
      * @var string
      */
-    protected $accountCountryCode = 'GB';
-    
+    protected $accountCountryCode = 'DE';
+
     /**
-     * Origin (destination) country code
-     * 
+     * Origin (destination) country code.
+     *
      * @var string
      */
-    protected $originCountryCode = 'GB';
-            
+    protected $originCountryCode = 'DE';
+
     /**
-     * User ID
-     * 
+     * User ID.
+     *
      * @var string
      */
     protected $userId;
-    
+
     /**
-     * Password
-     * 
+     * Password.
+     *
      * @var string
      */
     protected $password;
-    
+
     /**
-     * Disable SSL verification
-     * 
+     * Disable SSL verification.
+     *
      * @var bool
      */
     private $verifySSL = true;
-    
+
     /**
-     * Get TNT service URL
-     * 
+     * Get TNT service URL.
+     *
      * @var string
      */
     abstract public function getServiceUrl();
-    
+
     /**
-     * Initialise service
-     * 
+     * Initialise service.
+     *
      * @param string $userId
      * @param string $password
      * @throw TNTException
      */
     public function __construct($userId, $password)
     {
-        
-        if(empty($userId) === true) {
-            
+        if (true === empty($userId)) {
             throw new TNTException(TNTException::USERNAME_EMPTY);
-            
         }
-        
-        if(empty($password) === true) {
-            
+
+        if (true === empty($password)) {
             throw new TNTException(TNTException::PASS_EMPTY);
-            
         }
-        
+
         $this->userId = $userId;
         $this->password = $password;
-        
+
         $this->initXml();
-                
     }
-    
+
     /**
-     * Clean up memory
+     * Clean up memory.
      */
     public function __destruct()
     {
-        
         // clean up output buffer
         $this->xml->flush();
-        
     }
-    
+
     /**
-     * Initialize XML object
-     * 
-     * @return void
+     * Initialize XML object.
      */
     public function initXml()
     {
-        
         $this->xml = new MyXMLWriter();
         $this->xml->openMemory();
         $this->xml->setIndent(true);
-        
     }
-           
+
     /**
-     * Set account
-     * 
+     * Set account.
+     *
      * @param int $accountNumber
+     *
      * @return AbstractService
      */
     public function setAccountNumber($accountNumber)
     {
-        
         $this->account = $accountNumber;
-        
+
         return $this;
-        
     }
-    
+
     /**
-     * Set account country code
-     * 
+     * Set account country code.
+     *
      * @param string $countryCode
+     *
      * @return AbstractService
      */
     public function setAccountCountryCode($countryCode)
     {
-        
         $this->accountCountryCode = $countryCode;
+
         return $this;
-        
     }
-    
+
     /**
-     * Set origin (destination) country code
-     * 
+     * Set origin (destination) country code.
+     *
      * @param string $countryCode
+     *
      * @return AbstractService
      */
     public function setOriginCountryCode($countryCode)
     {
-        
         $this->originCountryCode = $countryCode;
+
         return $this;
-        
     }
-    
+
     /**
-     * Disable SSL verification
-     * 
+     * Disable SSL verification.
+     *
      * @return AbstractService
      */
     public function disableSSLVerify()
     {
-        
         $this->verifySSL = false;
+
         return $this;
-        
     }
-    
+
     /**
-     * Build/start document
-     * 
-     * @return void
+     * Build/start document.
      */
     protected function startDocument()
     {
-        
         $this->xml->startDocument('1.0', 'UTF-8', 'no');
-        
     }
-    
+
     /**
-     * Build/end document
-     * 
-     * @return void
+     * Build/end document.
      */
     protected function endDocument()
     {
-        
         $this->xml->endDocument();
-        
     }
-    
+
     /**
      * Set XML content.
      * This is useful when you want to send your own prepared XML document.
-     * 
+     *
      * @param string $xml
+     *
      * @return bool
      */
     public function setXmlContent($xml)
     {
-        
-        $this->xml->flush();       
+        $this->xml->flush();
+
         return $this->xml->writeRaw($xml);
-        
     }
-    
+
     /**
-     * Get XML content
-     * 
+     * Get XML content.
+     *
      * @return string
      */
     protected function getXmlContent()
     {
-        
         return $this->xml->flush(false);
-        
     }
-    
+
     /**
-     * Send request
-     * 
+     * Send request.
+     *
      * @return string Returns TNT Response string as XML
      */
     protected function sendRequest()
     {
-        
-        $headers[] = "Content-type: application/x-www-form-urlencoded";
-        $headers[] = "Authorization: Basic " . base64_encode("$this->userId:$this->password");
-        
-        $context = stream_context_create(array(
-                'http' => array(
+        $headers[] = 'Content-type: application/x-www-form-urlencoded';
+        $headers[] = 'Authorization: Basic '.base64_encode("$this->userId:$this->password");
+
+        $context = stream_context_create([
+                'http' => [
                     'header' => $headers,
                     'method' => 'POST',
-                    'content' => $this->buildHttpPostData()
-                ),
-                'ssl' => array(
+                    'content' => $this->buildHttpPostData(),
+                ],
+                'ssl' => [
                      'verify_peer' => $this->verifySSL,
-                     'verify_peer_name' => $this->verifySSL)
-                )
+                     'verify_peer_name' => $this->verifySSL, ],
+                ]
         );
-        
+
         $output = @file_get_contents($this->getServiceUrl(), false, $context);
-        
-        // $http_response_header comes from PHP engine, 
+
+        // $http_response_header comes from PHP engine,
         // it's not a part of this code
         // http://php.net/manual/en/reserved.variables.httpresponseheader.php
         HTTPHeaders::$headers = $http_response_header;
-        
+
         return $output;
-        
     }
- 
+
     /**
-     * Build HTTP Post data
-     * 
+     * Build HTTP Post data.
+     *
      * @return string
      */
     private function buildHttpPostData()
     {
-        
-        $post = http_build_query(array('xml_in' => $this->getXmlContent()));
+        $post = http_build_query(['xml_in' => $this->getXmlContent()]);
+
         return $post;
-        
     }
-    
 }
